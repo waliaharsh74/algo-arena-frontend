@@ -1,0 +1,87 @@
+﻿@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Space+Grotesk:wght@400;500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 36 38% 96%;
+    --foreground: 20 20% 12%;
+    --card: 34 45% 98%;
+    --card-foreground: 20 20% 12%;
+    --popover: 34 45% 98%;
+    --popover-foreground: 20 20% 12%;
+    --primary: 13 82% 52%;
+    --primary-foreground: 36 40% 98%;
+    --secondary: 171 44% 82%;
+    --secondary-foreground: 20 20% 15%;
+    --muted: 30 24% 90%;
+    --muted-foreground: 20 10% 45%;
+    --accent: 173 55% 40%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 24 16% 82%;
+    --input: 24 16% 82%;
+    --ring: 173 55% 40%;
+    --radius: 18px;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+    min-height: 100vh;
+    position: relative;
+    isolation: isolate;
+  }
+
+  #root {
+    min-height: 100vh;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: "Bricolage Grotesque", ui-serif, serif;
+    letter-spacing: -0.02em;
+  }
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: radial-gradient(circle at 12% 18%, hsl(var(--primary) / 0.25), transparent 45%),
+    radial-gradient(circle at 88% 12%, hsl(var(--accent) / 0.22), transparent 40%),
+    linear-gradient(90deg, hsl(var(--border) / 0.5) 1px, transparent 1px),
+    linear-gradient(180deg, hsl(var(--border) / 0.5) 1px, transparent 1px);
+  background-size: 900px 600px, 700px 520px, 80px 80px, 80px 80px;
+  background-position: -200px -120px, 60% -40px, 0 0, 0 0;
+  opacity: 0.7;
+  z-index: -1;
+  pointer-events: none;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.85), transparent 30%, transparent 70%, rgba(255, 255, 255, 0.95));
+  z-index: -2;
+  pointer-events: none;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
