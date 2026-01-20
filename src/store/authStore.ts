@@ -10,13 +10,14 @@ import {
 import type { LoginFormValues, RegisterFormValues } from "@/types/forms";
 
 export type AuthStatus = "idle" | "loading" | "authenticated";
+type AuthRole = User["role"];
 
 type AuthState = {
   user: User | null;
   status: AuthStatus;
   refresh: () => Promise<void>;
-  login: (payload: LoginFormValues) => Promise<boolean>;
-  register: (payload: RegisterFormValues) => Promise<boolean>;
+  login: (payload: LoginFormValues, role?: AuthRole) => Promise<boolean>;
+  register: (payload: RegisterFormValues, role?: AuthRole) => Promise<boolean>;
   logout: () => Promise<void>;
 };
 
@@ -37,10 +38,11 @@ export const useAuthStore = create<AuthState>((set) => ({
       notifyError(error, "Unable to refresh session.");
     }
   },
-  login: async (payload) => {
+  login: async (payload, role = "USER") => {
     set({ status: "loading" });
     try {
-      const data = await api.post("/auth/login", payload, authResponseSchema);
+      const path = role === "ADMIN" ? "/auth/login/admin" : "/auth/login";
+      const data = await api.post(path, payload, authResponseSchema);
       set({ user: data.user, status: "authenticated" });
       notifySuccess("Welcome back", "You are signed in and ready to compete.");
       return true;
@@ -50,10 +52,11 @@ export const useAuthStore = create<AuthState>((set) => ({
       return false;
     }
   },
-  register: async (payload) => {
+  register: async (payload, role = "USER") => {
     set({ status: "loading" });
     try {
-      const data = await api.post("/auth/register", payload, authResponseSchema);
+      const path = role === "ADMIN" ? "/auth/register/admin" : "/auth/register";
+      const data = await api.post(path, payload, authResponseSchema);
       set({ user: data.user, status: "authenticated" });
       notifySuccess("Account created", "Your arena profile is ready.");
       return true;

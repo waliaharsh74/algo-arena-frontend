@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Calendar, Clock, Flame, Sparkles } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { cn } from "@/lib/utils";
 import { formatCountdown, formatDateRange, formatDuration, getContestStatus } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { useContestStore } from "@/store/contestStore";
 import type { Contest, ContestStatus } from "@/types/api";
 
@@ -18,7 +18,8 @@ const statusCopy: Record<ContestStatus, string> = {
 };
 
 export const ContestExplorer = () => {
-  const { contestsByStatus, listLoading, selectContest, activeContestId } = useContestStore();
+  const { contestsByStatus, listLoading, listLoaded, selectContest, activeContestId } =
+    useContestStore();
   const [status, setStatus] = useState<ContestStatus>("active");
 
   const counts = useMemo(
@@ -31,7 +32,9 @@ export const ContestExplorer = () => {
   );
 
   const list = contestsByStatus[status];
-  const isLoading = listLoading[status];
+  const isLoading = listLoading[status] || !listLoaded[status];
+
+  const handleStatusChange = (value: string) => setStatus(value as ContestStatus);
 
   return (
     <Card className="animate-fade-up">
@@ -48,7 +51,7 @@ export const ContestExplorer = () => {
         </div>
       </CardHeader>
       <CardContent>
-        <Tabs value={status} onValueChange={(value) => setStatus(value as ContestStatus)}>
+        <Tabs value={status} onValueChange={handleStatusChange}>
           <TabsList className="w-full justify-between">
             <TabsTrigger value="active" className="flex-1">
               Active ({counts.active})
@@ -64,7 +67,7 @@ export const ContestExplorer = () => {
             <div className="mt-4 space-y-4">
               {isLoading
                 ? Array.from({ length: 3 }).map((_, index) => (
-                    <Skeleton key={index} className="h-32 w-full" />
+                    <ContestCardSkeleton key={`browse-skeleton-${index}`} />
                   ))
                 : list.map((contest) => (
                     <ContestCard
@@ -134,13 +137,31 @@ const ContestCard = ({ contest, isSelected, onSelect }: ContestCardProps) => {
             </span>
           </div>
         </div>
-        <Button
-          variant={status.key === "active" ? "default" : "outline"}
-          onClick={onSelect}
-        >
+        <Button variant={status.key === "active" ? "default" : "outline"} onClick={onSelect}>
           {isSelected ? "Selected" : "View"}
         </Button>
       </div>
     </div>
   );
 };
+
+const ContestCardSkeleton = () => (
+  <div className="rounded-3xl border border-border/60 bg-background/70 p-5">
+    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="flex-1 space-y-3">
+        <div className="flex flex-wrap gap-2">
+          <Skeleton className="h-5 w-20" />
+          <Skeleton className="h-5 w-16" />
+        </div>
+        <Skeleton className="h-5 w-2/3" />
+        <Skeleton className="h-4 w-full" />
+        <div className="flex flex-wrap gap-3">
+          <Skeleton className="h-4 w-28" />
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-4 w-24" />
+        </div>
+      </div>
+      <Skeleton className="h-10 w-24" />
+    </div>
+  </div>
+);

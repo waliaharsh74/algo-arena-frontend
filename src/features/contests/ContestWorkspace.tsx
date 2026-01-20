@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatCountdown, formatDateRange, formatDuration, formatScore, getContestStatus } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -84,8 +85,21 @@ export const ContestWorkspace = () => {
     return (
       <Card className="animate-fade-up">
         <CardHeader>
-          <CardTitle>Loading contest...</CardTitle>
+          <div className="space-y-2">
+            <Skeleton className="h-6 w-48" />
+            <Skeleton className="h-4 w-72" />
+          </div>
         </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <Skeleton className="h-24 w-full" />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Skeleton className="h-24 w-full" />
+              <Skeleton className="h-24 w-full" />
+            </div>
+            <Skeleton className="h-24 w-full" />
+          </div>
+        </CardContent>
       </Card>
     );
   }

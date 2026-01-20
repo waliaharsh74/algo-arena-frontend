@@ -4,6 +4,7 @@ import { getErrorDescription, getErrorMessage } from "@/lib/errors";
 export const notifyError = (error: unknown, fallback?: string) => {
   const title = getErrorMessage(error, fallback ?? "Something went wrong");
   const description = getErrorDescription(error);
+  console.error("[notifyError]", { error, title, description });
   toast({
     title,
     description,

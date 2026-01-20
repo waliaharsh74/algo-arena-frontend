@@ -10,6 +10,18 @@ const errorPayloadSchema = z.object({
   }),
 });
 
+const refreshSkipPaths = new Set([
+  "/auth/login",
+  "/auth/login/user",
+  "/auth/login/admin",
+  "/auth/register",
+  "/auth/register/user",
+  "/auth/register/admin",
+  "/auth/refresh",
+  "/auth/me",
+]);
+let refreshPromise: Promise<void> | null = null;
+
 const parseJson = async (res: Response) => {
   try {
     return await res.json();
@@ -29,10 +41,34 @@ const buildError = (res: Response, payload: unknown) => {
   });
 };
 
+const refreshSession = async () => {
+  const pendingRefresh =
+    refreshPromise ??
+    (refreshPromise = (async () => {
+      const response = await fetch(`${env.apiBaseUrl}/auth/refresh`, {
+        method: "POST",
+        credentials: "include",
+      });
+      const payload = await parseJson(response);
+      if (!response.ok) {
+        throw buildError(response, payload);
+      }
+    })());
+
+  try {
+    await pendingRefresh;
+  } finally {
+    if (refreshPromise === pendingRefresh) {
+      refreshPromise = null;
+    }
+  }
+};
+
 const request = async <T>(
   path: string,
   options: RequestInit,
-  schema: z.ZodType<T>
+  schema: z.ZodType<T>,
+  allowRetry = true
 ): Promise<T> => {
   const url = `${env.apiBaseUrl}${path}`;
   const headers = new Headers(options.headers);
@@ -45,6 +81,12 @@ const request = async <T>(
     headers,
     credentials: "include",
   });
+
+  const normalizedPath = path.split("?")[0] ?? path;
+  if (allowRetry && response.status === 401 && !refreshSkipPaths.has(normalizedPath)) {
+    await refreshSession();
+    return request(path, options, schema, false);
+  }
 
   const payload = await parseJson(response);
 
@@ -85,5 +127,7 @@ export const api = {
       },
       schema
     ),
+  delete: <T>(path: string, schema: z.ZodType<T>) =>
+    request(path, { method: "DELETE" }, schema),
 };
 

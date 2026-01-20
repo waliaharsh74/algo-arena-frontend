@@ -38,6 +38,43 @@ export const questionSchema = z.object({
   choices: z.array(choiceSchema),
 });
 
+export const adminChoiceSchema = choiceSchema.extend({
+  isCorrect: z.boolean(),
+});
+
+export const adminQuestionSchema = z.object({
+  id: z.string().uuid(),
+  order: z.number().int(),
+  title: z.string(),
+  description: z.string().nullable(),
+  isMultiple: z.boolean(),
+  points: z.number().int(),
+  maxTimeSeconds: z.number().int(),
+  createdById: z.string().uuid().nullable().optional(),
+  choices: z.array(adminChoiceSchema),
+});
+
+export const questionBankItemSchema = z.object({
+  id: z.string().uuid(),
+  title: z.string(),
+  description: z.string().nullable(),
+  isMultiple: z.boolean(),
+  points: z.number().int(),
+  maxTimeSeconds: z.number().int(),
+  tags: z.array(z.string()),
+  createdById: z.string().uuid().nullable().optional(),
+  choicesCount: z.number().int(),
+});
+
+export const questionBankResponseSchema = z.object({
+  questions: z.array(questionBankItemSchema),
+  pagination: z.object({
+    total: z.number().int(),
+    limit: z.number().int(),
+    offset: z.number().int(),
+  }),
+});
+
 export const leaderboardEntrySchema = z.object({
   userId: z.string().uuid(),
   score: z.number(),
@@ -66,6 +103,30 @@ export const questionsResponseSchema = z.object({
   questions: z.array(questionSchema),
 });
 
+export const adminQuestionsResponseSchema = z.object({
+  questions: z.array(adminQuestionSchema),
+});
+
+export const questionResponseSchema = z.object({
+  question: questionSchema,
+});
+
+export const importQuestionsResponseSchema = z.object({
+  imported: z.number().int(),
+});
+
+export const attachQuestionsResponseSchema = z.object({
+  added: z.number().int(),
+});
+
+export const updateQuestionResponseSchema = z.object({
+  updated: z.boolean(),
+});
+
+export const deleteQuestionResponseSchema = z.object({
+  deleted: z.boolean(),
+});
+
 export const progressResponseSchema = z.object({
   progress: progressSchema,
 });
@@ -91,6 +152,8 @@ export const joinContestResponseSchema = z.object({
 export type User = z.infer<typeof userSchema>;
 export type Contest = z.infer<typeof contestSchema>;
 export type Question = z.infer<typeof questionSchema>;
+export type AdminQuestion = z.infer<typeof adminQuestionSchema>;
+export type QuestionBankItem = z.infer<typeof questionBankItemSchema>;
 export type LeaderboardEntry = z.infer<typeof leaderboardEntrySchema>;
 export type Progress = z.infer<typeof progressSchema>;
 export type SubmitAnswerResult = z.infer<typeof submitAnswerResponseSchema>;

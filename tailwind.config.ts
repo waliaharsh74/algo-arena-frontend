@@ -71,10 +71,15 @@ const config: Config = {
           "50%": { transform: "translateY(-10px)" },
           "100%": { transform: "translateY(0px)" },
         },
+        shimmer: {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(100%)" },
+        },
       },
       animation: {
         "fade-up": "fade-up 0.6s ease-out both",
         float: "float 10s ease-in-out infinite",
+        shimmer: "shimmer 1.6s ease-in-out infinite",
       },
       backgroundImage: {
         "hero-glow":

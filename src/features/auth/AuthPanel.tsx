@@ -9,6 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuthStore } from "@/store/authStore";
 import { loginFormSchema, registerFormSchema, type LoginFormValues } from "@/types/forms";
 
+type AuthRole = "USER" | "ADMIN";
+
 const initialValues: LoginFormValues = {
   email: "",
   password: "",
@@ -19,6 +21,7 @@ type FormErrors = Partial<Record<keyof LoginFormValues, string>>;
 export const AuthPanel = () => {
   const { status, login, register } = useAuthStore();
   const [mode, setMode] = useState<"login" | "register">("login");
+  const [role, setRole] = useState<AuthRole>("USER");
   const [values, setValues] = useState<LoginFormValues>(initialValues);
   const [errors, setErrors] = useState<FormErrors>({});
 
@@ -43,7 +46,10 @@ export const AuthPanel = () => {
       return;
     }
 
-    const success = mode === "login" ? await login(result.data) : await register(result.data);
+    const success =
+      mode === "login"
+        ? await login(result.data, role)
+        : await register(result.data, role);
     if (success) {
       setValues(initialValues);
       setErrors({});
@@ -62,94 +68,105 @@ export const AuthPanel = () => {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs value={mode} onValueChange={(value) => setMode(value as typeof mode)}>
-          <TabsList className="w-full">
-            <TabsTrigger value="login" className="flex-1">Sign in</TabsTrigger>
-            <TabsTrigger value="register" className="flex-1">Register</TabsTrigger>
-          </TabsList>
-          <TabsContent value="login">
-            <form className="mt-4 space-y-4" onSubmit={handleSubmit}>
-              <div className="space-y-2">
-                <label className="text-sm font-semibold" htmlFor="login-email">
-                  Email
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="login-email"
-                    type="email"
-                    placeholder="you@arena.com"
-                    value={values.email}
-                    onChange={handleChange("email")}
-                    className="pl-10"
-                  />
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase text-muted-foreground">Account type</p>
+            <Tabs value={role} onValueChange={(value) => setRole(value as AuthRole)}>
+              <TabsList className="w-full">
+                <TabsTrigger value="USER" className="flex-1">User</TabsTrigger>
+                <TabsTrigger value="ADMIN" className="flex-1">Admin</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+          <Tabs value={mode} onValueChange={(value) => setMode(value as typeof mode)}>
+            <TabsList className="w-full">
+              <TabsTrigger value="login" className="flex-1">Sign in</TabsTrigger>
+              <TabsTrigger value="register" className="flex-1">Register</TabsTrigger>
+            </TabsList>
+            <TabsContent value="login">
+              <form className="mt-4 space-y-4" onSubmit={handleSubmit}>
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold" htmlFor="login-email">
+                    Email
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="login-email"
+                      type="email"
+                      placeholder="you@arena.com"
+                      value={values.email}
+                      onChange={handleChange("email")}
+                      className="pl-10"
+                    />
+                  </div>
+                  {errors.email ? <p className="text-xs text-destructive">{errors.email}</p> : null}
                 </div>
-                {errors.email ? <p className="text-xs text-destructive">{errors.email}</p> : null}
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-semibold" htmlFor="login-password">
-                  Password
-                </label>
-                <Input
-                  id="login-password"
-                  type="password"
-                  placeholder="password"
-                  value={values.password}
-                  onChange={handleChange("password")}
-                />
-                {errors.password ? (
-                  <p className="text-xs text-destructive">{errors.password}</p>
-                ) : null}
-              </div>
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Signing in..." : "Enter the arena"}
-              </Button>
-            </form>
-          </TabsContent>
-          <TabsContent value="register">
-            <form className="mt-4 space-y-4" onSubmit={handleSubmit}>
-              <div className="space-y-2">
-                <label className="text-sm font-semibold" htmlFor="register-email">
-                  Email
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold" htmlFor="login-password">
+                    Password
+                  </label>
                   <Input
-                    id="register-email"
-                    type="email"
-                    placeholder="you@arena.com"
-                    value={values.email}
-                    onChange={handleChange("email")}
-                    className="pl-10"
+                    id="login-password"
+                    type="password"
+                    placeholder="password"
+                    value={values.password}
+                    onChange={handleChange("password")}
                   />
+                  {errors.password ? (
+                    <p className="text-xs text-destructive">{errors.password}</p>
+                  ) : null}
                 </div>
-                {errors.email ? <p className="text-xs text-destructive">{errors.email}</p> : null}
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-semibold" htmlFor="register-password">
-                  Password
-                </label>
-                <Input
-                  id="register-password"
-                  type="password"
-                  placeholder="At least 8 characters"
-                  value={values.password}
-                  onChange={handleChange("password")}
-                />
-                {errors.password ? (
-                  <p className="text-xs text-destructive">{errors.password}</p>
-                ) : (
-                  <p className="text-xs text-muted-foreground">
-                    Use 8-72 characters. Mix letters and numbers for better security.
-                  </p>
-                )}
-              </div>
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Creating account..." : "Create account"}
-              </Button>
-            </form>
-          </TabsContent>
-        </Tabs>
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? "Signing in..." : "Enter the arena"}
+                </Button>
+              </form>
+            </TabsContent>
+            <TabsContent value="register">
+              <form className="mt-4 space-y-4" onSubmit={handleSubmit}>
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold" htmlFor="register-email">
+                    Email
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="register-email"
+                      type="email"
+                      placeholder="you@arena.com"
+                      value={values.email}
+                      onChange={handleChange("email")}
+                      className="pl-10"
+                    />
+                  </div>
+                  {errors.email ? <p className="text-xs text-destructive">{errors.email}</p> : null}
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold" htmlFor="register-password">
+                    Password
+                  </label>
+                  <Input
+                    id="register-password"
+                    type="password"
+                    placeholder="At least 8 characters"
+                    value={values.password}
+                    onChange={handleChange("password")}
+                  />
+                  {errors.password ? (
+                    <p className="text-xs text-destructive">{errors.password}</p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      Use 8-72 characters. Mix letters and numbers for better security.
+                    </p>
+                  )}
+                </div>
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? "Creating account..." : "Create account"}
+                </Button>
+              </form>
+            </TabsContent>
+          </Tabs>
+        </div>
       </CardContent>
     </Card>
   );
