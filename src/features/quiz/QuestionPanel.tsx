@@ -29,15 +29,18 @@ export const QuestionPanel = ({ contestId, questions, answers, isLoading }: Ques
   const [index, setIndex] = useState(0);
   const [selectedChoices, setSelectedChoices] = useState<string[]>([]);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const previousQuestionId = useRef<string | null>(null);
+  const startedAtRef = useRef<Record<string, number>>({});
 
   const current = questions[index];
   const answerRecord = current ? answers[current.id] : undefined;
   const isAnswered = Boolean(answerRecord);
 
-  // useEffect(() => {
-  //   setIndex(0);
-  // }, [contestId]);
+  useEffect(() => {
+    setIndex(0);
+    setSelectedChoices([]);
+    setElapsedSeconds(0);
+    startedAtRef.current = {};
+  }, [contestId]);
 
   useEffect(() => {
     if (index >= questions.length) {
@@ -49,29 +52,31 @@ export const QuestionPanel = ({ contestId, questions, answers, isLoading }: Ques
     if (!current) {
       setSelectedChoices([]);
       setElapsedSeconds(0);
-      previousQuestionId.current = null;
       return;
     }
 
     const storedChoices = answers[current.id]?.choiceIds ?? [];
+    setSelectedChoices(storedChoices);
 
-    if (previousQuestionId.current !== current.id) {
-      setSelectedChoices(storedChoices);
-      setElapsedSeconds(0);
-      previousQuestionId.current = current.id;
+    if (answers[current.id]) {
+      setElapsedSeconds(current.maxTimeSeconds);
       return;
     }
 
-    if (storedChoices.length) {
-      setSelectedChoices(storedChoices);
+    if (!startedAtRef.current[current.id]) {
+      startedAtRef.current[current.id] = Date.now();
     }
+
+    const startedAt = startedAtRef.current[current.id];
+    setElapsedSeconds(Math.floor((Date.now() - startedAt) / 1000));
   }, [current, answers]);
 
   useEffect(() => {
     if (!current || isAnswered) return;
-    const start = Date.now();
+    const startedAt = startedAtRef.current[current.id];
+    if (!startedAt) return;
     const timer = setInterval(() => {
-      setElapsedSeconds(Math.floor((Date.now() - start) / 1000));
+      setElapsedSeconds(Math.floor((Date.now() - startedAt) / 1000));
     }, 1000);
     return () => clearInterval(timer);
   }, [current, isAnswered]);
@@ -80,6 +85,8 @@ export const QuestionPanel = ({ contestId, questions, answers, isLoading }: Ques
     if (!current) return 0;
     return Math.max(current.maxTimeSeconds - elapsedSeconds, 0);
   }, [current, elapsedSeconds]);
+
+  const isLocked = isAnswered || timeRemaining <= 0;
 
   const timePercent = useMemo(() => {
     if (!current || current.maxTimeSeconds <= 0) return 0;
@@ -91,7 +98,7 @@ export const QuestionPanel = ({ contestId, questions, answers, isLoading }: Ques
     : 0;
 
   const toggleChoice = (choiceId: string) => {
-    if (!current || isAnswered || timeRemaining <= 0) return;
+    if (!current || isLocked) return;
     if (current.isMultiple) {
       setSelectedChoices((prev) =>
         prev.includes(choiceId) ? prev.filter((id) => id !== choiceId) : [...prev, choiceId]
@@ -177,11 +184,11 @@ export const QuestionPanel = ({ contestId, questions, answers, isLoading }: Ques
                 key={choice.id}
                 type="button"
                 onClick={() => toggleChoice(choice.id)}
-                disabled={isAnswered}
+                disabled={isLocked}
                 className={cn(
                   "flex w-full items-center gap-3 rounded-2xl border border-border/70 bg-background/80 px-4 py-3 text-left text-sm transition hover:border-primary/50",
                   isSelected && "border-primary bg-primary/10",
-                  isAnswered && "cursor-not-allowed opacity-70"
+                  isLocked && "cursor-not-allowed opacity-70"
                 )}
               >
                 <span className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-xs font-semibold">

@@ -1,5 +1,6 @@
 ﻿import { create } from "zustand";
 import { api } from "@/lib/api";
+import { isApiError } from "@/lib/errors";
 import { notifyError, notifySuccess } from "@/lib/notify";
 import {
   adminQuestionsResponseSchema,
@@ -344,11 +345,31 @@ export const useContestStore = create<ContestState>((set, get) => ({
         `/contests/${contestId}/questions`,
         questionsResponseSchema
       );
+      const submittedAnswers = data.questions.reduce<Record<string, AnswerRecord>>(
+        (acc, question) => {
+          if (question.submittedAnswer) {
+            acc[question.id] = {
+              choiceIds: question.submittedAnswer.choiceIds,
+              awardedPoints: question.submittedAnswer.awardedPoints,
+              submittedAt: question.submittedAnswer.submittedAt,
+            };
+          }
+          return acc;
+        },
+        {}
+      );
       if (get().activeContestId === contestId) {
-        set({ questions: data.questions, questionsLoading: false });
+        set((state) => ({
+          questions: data.questions,
+          answers: { ...submittedAnswers, ...state.answers },
+          questionsLoading: false,
+        }));
       }
     } catch (error) {
       set({ questionsLoading: false });
+      if (isApiError(error) && error.code === "NOT_A_PARTICIPANT") {
+        return;
+      }
       notifyError(error, "Unable to load questions.");
     }
   },
@@ -388,8 +409,12 @@ export const useContestStore = create<ContestState>((set, get) => ({
           },
         },
         progress: state.progress
-          ? { ...state.progress, score: data.score }
-          : { score: data.score, rank: null },
+          ? {
+              ...state.progress,
+              score: data.score,
+              attemptedCount: state.progress.attemptedCount + 1,
+            }
+          : { score: data.score, rank: null, attemptedCount: 1 },
       }));
       notifySuccess(
         "Answer submitted",
@@ -414,6 +439,9 @@ export const useContestStore = create<ContestState>((set, get) => ({
       }
     } catch (error) {
       set({ progressLoading: false });
+      if (isApiError(error) && error.code === "NOT_A_PARTICIPANT") {
+        return;
+      }
       notifyError(error, "Unable to load your progress.");
     }
   },

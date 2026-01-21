@@ -27,6 +27,12 @@ export const choiceSchema = z.object({
   value: z.string(),
 });
 
+const submittedAnswerSchema = z.object({
+  choiceIds: z.array(z.string().uuid()),
+  awardedPoints: z.number().int(),
+  submittedAt: z.string().datetime(),
+});
+
 export const questionSchema = z.object({
   id: z.string().uuid(),
   order: z.number().int(),
@@ -36,6 +42,7 @@ export const questionSchema = z.object({
   points: z.number().int(),
   maxTimeSeconds: z.number().int(),
   choices: z.array(choiceSchema),
+  submittedAnswer: submittedAnswerSchema.nullable().optional(),
 });
 
 export const adminChoiceSchema = choiceSchema.extend({
@@ -78,12 +85,13 @@ export const questionBankResponseSchema = z.object({
 export const leaderboardEntrySchema = z.object({
   userId: z.string().uuid(),
   score: z.number(),
-  rank: z.number().int(),
+  rank: z.string(),
 });
 
 export const progressSchema = z.object({
   score: z.number(),
   rank: z.number().int().nullable(),
+  attemptedCount: z.number().int(),
 });
 
 export const submitAnswerResponseSchema = z.object({

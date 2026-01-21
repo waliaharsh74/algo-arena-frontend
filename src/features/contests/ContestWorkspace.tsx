@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity,
   BookOpen,
@@ -29,6 +29,8 @@ export const ContestWorkspace = () => {
     detailLoading,
     joinContest,
     joinLoading,
+    loadProgress,
+    loadQuestions,
     questions,
     answers,
     progress,
@@ -36,10 +38,17 @@ export const ContestWorkspace = () => {
     questionsLoading,
   } = useContestStore();
   const [tab, setTab] = useState("overview");
+  const progressAttemptRef = useRef<string | null>(null);
+  const questionsAttemptRef = useRef<string | null>(null);
 
+  const contestId = activeContest?.id ?? null;
   const totalQuestions = questions.length;
   const answeredCount = Object.keys(answers).length;
-  const progressPercent = totalQuestions ? Math.round((answeredCount / totalQuestions) * 100) : 0;
+  const attemptedCount = progress?.attemptedCount ?? answeredCount;
+  const progressPercent = totalQuestions
+    ? Math.round((attemptedCount / totalQuestions) * 100)
+    : 0;
+  const hasCompleted = totalQuestions > 0 && attemptedCount >= totalQuestions;
 
   const contestStatus = useMemo(
     () => (activeContest ? getContestStatus(activeContest) : null),
@@ -52,6 +61,25 @@ export const ContestWorkspace = () => {
       : contestStatus?.key === "past"
         ? "Contest has ended. Final leaderboard is available."
         : "Contest not available yet.";
+
+  useEffect(() => {
+    if (!contestId || !user || !isContestActive) return;
+    if (progress || progressLoading) return;
+    const progressKey = `${user.id}:${contestId}`;
+    if (progressAttemptRef.current === progressKey) return;
+    progressAttemptRef.current = progressKey;
+    void loadProgress(contestId);
+  }, [contestId, user, isContestActive, progress, progressLoading, loadProgress]);
+
+  useEffect(() => {
+    if (!contestId || !user || !isContestActive) return;
+    if (!progress) return;
+    if (questions.length || questionsLoading) return;
+    const questionsKey = `${user.id}:${contestId}`;
+    if (questionsAttemptRef.current === questionsKey) return;
+    questionsAttemptRef.current = questionsKey;
+    void loadQuestions(contestId);
+  }, [contestId, user, isContestActive, progress, questions.length, questionsLoading, loadQuestions]);
 
   const handleJoin = async () => {
     if (!activeContest) return;
@@ -160,10 +188,16 @@ export const ContestWorkspace = () => {
                       Sign in to join this contest.
                     </div>
                   ) : isContestActive ? (
-                    <Button onClick={handleJoin} disabled={joinLoading}>
-                      <Play className="h-4 w-4" />
-                      {joinLoading ? "Joining..." : "Join and start"}
-                    </Button>
+                    hasCompleted ? (
+                      <div className="rounded-2xl border border-border bg-muted/60 px-4 py-2 text-xs text-muted-foreground">
+                        All questions attempted.
+                      </div>
+                    ) : (
+                      <Button onClick={handleJoin} disabled={joinLoading}>
+                        <Play className="h-4 w-4" />
+                        {joinLoading ? "Joining..." : "Join and start"}
+                      </Button>
+                    )
                   ) : (
                     <div className="rounded-2xl border border-border bg-muted/60 px-4 py-2 text-xs text-muted-foreground">
                       {joinNote}
@@ -206,7 +240,7 @@ export const ContestWorkspace = () => {
                   <div>
                     <p className="text-xs uppercase text-muted-foreground">Progress</p>
                     <p className="text-sm font-semibold">
-                      {answeredCount}/{totalQuestions || "-"} answered
+                      {attemptedCount}/{totalQuestions || "-"} answered
                     </p>
                   </div>
                   <span className="text-xs text-muted-foreground">{progressPercent}%</span>
